@@ -113,7 +113,8 @@ public class MainActivity extends Activity {
             public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
                 Intent intent = new Intent(MainActivity.this, OperateActivity.class);
                 Bundle bundle = new Bundle();
-                bundle.putParcelable("device", devices.get(position));
+                BluetoothDevice device = devices.get(position);
+                bundle.putParcelable("device", device);
                 intent.putExtras(bundle);
                 mBluetoothAdapter.stopLeScan(mScanCallback);
                 startActivity(intent);
