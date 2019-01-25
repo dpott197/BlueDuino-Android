@@ -36,9 +36,8 @@ byte pin_pwm[TOTAL_PINS];
 byte pin_servo[TOTAL_PINS];
 
 void setup()
-{
-  mySerial.begin(9600);
-  
+{   
+  mySerial.begin(9600);  
    for (int pin = 0; pin < TOTAL_PINS; pin++)
     {
         // Set pin to input with internal pull up
@@ -51,7 +50,22 @@ void setup()
         pin_mode[pin] = PIN_MODE_OUTPUT;
         pin_state[pin] = HIGH;
     }
+
+    heartbeat();
 }
+
+void heartbeat() 
+{
+  Serial.begin(9600);
+  while (!Serial) {
+    // wait for serial port to connect. Needed for native USB port only
+  }
+  while (Serial.available() <= 0) {
+    Serial.println("BlueDuino Rev2 is running...");   // send a capital A
+    delay(1000);
+  }
+}
+
 
 byte reportDigitalInput()
 {
@@ -164,10 +178,12 @@ void loop()
   {
     byte cmd;
     cmd = mySerial.read();
+    Serial.println("cmd");
     switch (cmd)
     {
       case 'C':
       {
+        Serial.println("queryTotalPinCount");
         byte buf[2];
         buf[0] = 'C';
         buf[1] = TOTAL_PINS;
@@ -176,6 +192,7 @@ void loop()
       break;
       case 'A':
       {
+         Serial.println("queryPinAll");
          for (int pin = 0; pin < TOTAL_PINS; pin++)
             {
                     if (!IS_PIN_DIGITAL(pin)) {
@@ -274,4 +291,3 @@ void loop()
 
   
 }
-
