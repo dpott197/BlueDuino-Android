@@ -66,15 +66,11 @@ public class OperateActivity extends Activity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        setContentView(R.layout.activity_operate);
         super.onCreate(savedInstanceState);
-
+        setContentView(R.layout.activity_operate);
         init();
-
-        service_init();
-
+        serviceInit();
         setViewData();
-
     }
 
     private void setViewData() {
@@ -82,26 +78,21 @@ public class OperateActivity extends Activity {
             @Override
             public void run() {
                 try {
-                    // 等待成功绑定服务
                     // waiting for connect service
                     Thread.sleep(500);
 
                     // connect device
                     connectService(device);
 
-                    // 等待建立连接成功
                     // waiting for device connect
                     Thread.sleep(3000);
 
-                    // 获取引脚个数
-                    // get totol pin count
+                    // get total pin count
                     ABProtocol.queryTotalPinCount(mService);
 
-                    // 等待写入C返回值
-                    // waiting for the return when wirte C
+                    // waiting for the return when write C
                     Thread.sleep(500);
 
-                    // 获取引脚信息
                     // get all pins info
                     ABProtocol.queryPinAll(mService);
 
@@ -115,22 +106,21 @@ public class OperateActivity extends Activity {
     private void init() {
         Bundle bundle = getIntent().getExtras();
         device = bundle.getParcelable("device");
-        ListView lv = (ListView) findViewById(R.id.lv_blueduino_infos);
+        ListView listView = (ListView) findViewById(R.id.lv_blueduino_infos);
         adapter = new MyAdapter();
-        lv.setAdapter(adapter);
-        setItemClick(lv);
+        listView.setAdapter(adapter);
+        setItemClick(listView);
         progressDialog = ProgressDialog.show(OperateActivity.this,
                 "Loading...", "Please wait...", true, false);
         progressDialog.setCancelable(true);
 
     }
 
-    private void setItemClick(ListView lv) {
-        lv.setOnItemClickListener(new OnItemClickListener() {
+    private void setItemClick(ListView listView) {
+        listView.setOnItemClickListener(new OnItemClickListener() {
 
             @Override
-            public void onItemClick(AdapterView<?> parent, View view,
-                                    int position, long id) {
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 setChangeModle(position, view);
             }
 
@@ -238,17 +228,15 @@ public class OperateActivity extends Activity {
         mService.connect(device.getAddress());
     }
 
-    private void service_init() {
+    private void serviceInit() {
         Intent bindIntent = new Intent(this, UartService.class);
         bindService(bindIntent, mServiceConnection, Context.BIND_AUTO_CREATE);
-        LocalBroadcastManager.getInstance(this).registerReceiver(
-                UARTStatusChangeReceiver, makeGattUpdateIntentFilter());
+        LocalBroadcastManager.getInstance(this).registerReceiver(UARTStatusChangeReceiver, makeGattUpdateIntentFilter());
     }
 
     // UART service connected/disconnected
     private ServiceConnection mServiceConnection = new ServiceConnection() {
-        public void onServiceConnected(ComponentName className,
-                                       IBinder rawBinder) {
+        public void onServiceConnected(ComponentName className, IBinder rawBinder) {
             mService = ((UartService.LocalBinder) rawBinder).getService();
             if (!mService.initialize()) {
                 finish();
