@@ -51,7 +51,7 @@ void setup()
         pin_state[pin] = HIGH;
     }
 
-    heartbeat();
+    //heartbeat();
 }
 
 void heartbeat() 
