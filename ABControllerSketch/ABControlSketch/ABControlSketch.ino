@@ -1,7 +1,5 @@
 #include <SoftwareSerial.h>
 
-SoftwareSerial mySerial(11, 12); // RX, TX
-
 #define TOTAL_PINS 22
 
 #define PIN_CAPABILITY_NONE      0x00
@@ -36,8 +34,16 @@ byte pin_pwm[TOTAL_PINS];
 byte pin_servo[TOTAL_PINS];
 
 void setup()
-{   
-  mySerial.begin(9600);  
+{
+  // Note: The serial function will not work if the device go to sleep. 
+  // You need give high level to pin P0.1 to wakeup the device.
+  // https://wiki.aprbrother.com/en/ZeroBeacon.html
+  pinMode(13, OUTPUT);
+  digitalWrite(13, HIGH);
+
+  // BLE module CC2540 Pins - RXI/TXO - Serial1
+  // https://wiki.aprbrother.com/en/BlueDuino_Rev2_Hookup_Guide.html  
+  Serial1.begin(9600);  
    for (int pin = 0; pin < TOTAL_PINS; pin++)
     {
         // Set pin to input with internal pull up
@@ -50,22 +56,7 @@ void setup()
         pin_mode[pin] = PIN_MODE_OUTPUT;
         pin_state[pin] = HIGH;
     }
-
-    //heartbeat();
 }
-
-void heartbeat() 
-{
-  Serial.begin(9600);
-  while (!Serial) {
-    // wait for serial port to connect. Needed for native USB port only
-  }
-  while (Serial.available() <= 0) {
-    Serial.println("BlueDuino Rev2 is running...");   // send a capital A
-    delay(1000);
-  }
-}
-
 
 byte reportDigitalInput()
 {
@@ -88,7 +79,7 @@ byte reportDigitalInput()
         {
             pin_state[pin] = current_state;
             byte buf[] = {'G', pin, pin_mode[pin], current_state};
-            mySerial.write(buf, 4);
+            Serial1.write(buf, 4);
             
             report = 1;
         }
@@ -120,14 +111,14 @@ void reportPinCapability(byte pin)
 //        pin_cap |= PIN_CAPABILITY_SERVO;
     
     buf[2] = pin_cap;
-    mySerial.write(buf, 3);
+    Serial1.write(buf, 3);
 }
 void reportPinDigitalData(byte pin)
 {
     byte state = digitalRead(pin);
     byte mode = pin_mode[pin];
     byte buf[] = {'G', pin, mode, state};
-    mySerial.write(buf, 4);
+    Serial1.write(buf, 4);
 }
 
 void reportPinPWMData(byte pin)
@@ -135,7 +126,7 @@ void reportPinPWMData(byte pin)
     byte value = pin_pwm[pin];
     byte mode = pin_mode[pin];
     byte buf[] = {'G', pin, mode, value};
-    mySerial.write(buf, 4);
+    Serial1.write(buf, 4);
 }
 
 byte reportPinAnalogData()
@@ -162,7 +153,7 @@ byte reportPinAnalogData()
         mode = (value_hi << 4) | mode;
         
         byte buf[] = {'G', pin, mode, value_lo};
-        mySerial.write(buf, 4);
+        Serial1.write(buf, 4);
     }
     
     pin++;
@@ -174,10 +165,12 @@ byte reportPinAnalogData()
 
 void loop()
 {
-  while(mySerial.available() > 0)
+  Serial.println("loop()");  // For debugging. Prove device is running.
+  delay(1000);
+  while(Serial1.available() > 0)
   {
     byte cmd;
-    cmd = mySerial.read();
+    cmd = Serial1.read();
     Serial.println("cmd");
     switch (cmd)
     {
@@ -187,7 +180,7 @@ void loop()
         byte buf[2];
         buf[0] = 'C';
         buf[1] = TOTAL_PINS;
-        mySerial.write(buf, 2);
+        Serial1.write(buf, 2);
       }
       break;
       case 'A':
@@ -217,9 +210,9 @@ void loop()
       case 'T':
       {
         delay(WAIT_SECONDS);
-        int pin = mySerial.read();
+        int pin = Serial1.read();
         delay(WAIT_SECONDS);
-        int state = mySerial.read();
+        int state = Serial1.read();
         
         if (state == PIN_STATE_HIGH) {
           digitalWrite(pin, HIGH);
@@ -233,9 +226,9 @@ void loop()
       case 'N':
       {
         delay(WAIT_SECONDS);
-        byte pin = mySerial.read();
+        byte pin = Serial1.read();
         delay(WAIT_SECONDS);
-        byte value = mySerial.read();
+        byte value = Serial1.read();
         analogWrite(pin, value);
         pin_pwm[pin] = value;
       }
@@ -243,9 +236,9 @@ void loop()
       case 'S':
       {
         delay(WAIT_SECONDS);
-        byte pin = mySerial.read();
+        byte pin = Serial1.read();
         delay(WAIT_SECONDS);
-        byte mode = mySerial.read();
+        byte mode = Serial1.read();
        
         if (mode != pin_mode[pin])
         {
